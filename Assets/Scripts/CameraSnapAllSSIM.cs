@@ -76,29 +76,13 @@ class SSIM
     /// <returns></returns>                                                                                                                     
     internal double Index(string filename1, string filename2)                                                                                   
         {                                                     
-        Debug.Log("First filename: " + filename1 + ", Second filename: " + filename2);
-        // try
-        // {
-        //     using (var b1 = new Bitmap(filename1)){
-        //         Debug.Log("First bitmap: " + b1);
-        //         Debug.Log(string.Format("{0}px by {1}px", b1.Width, b1.Height));                                                                                                  
-        //         using (var b2 = new Bitmap(filename2)){
-        //             Debug.Log("Second bitmap: " + b2);
-        //             Debug.Log(string.Format("{0}px by {1}px", b2.Width, b2.Height));
-        //             return Index(b1,b2);
-        //         }
-        //     }
-        // }
-        // catch (Exception e)
-        // {
-        //     Debug.Log("Exception: " + e);
-        // }      
+        // Debug.Log("First filename: " + filename1 + ", Second filename: " + filename2);
         using (var b1 = new Bitmap(filename1)){
-            Debug.Log("First bitmap: " + b1);
-            Debug.Log(string.Format("{0}px by {1}px", b1.Width, b1.Height));                                                                                                  
+            // Debug.Log("First bitmap: " + b1);
+            // Debug.Log(string.Format("{0}px by {1}px", b1.Width, b1.Height));                                                                                                  
             using (var b2 = new Bitmap(filename2)){
-                Debug.Log("Second bitmap: " + b2);
-                Debug.Log(string.Format("{0}px by {1}px", b2.Width, b2.Height));
+                // Debug.Log("Second bitmap: " + b2);
+                // Debug.Log(string.Format("{0}px by {1}px", b2.Width, b2.Height));
                 return Index(b1,b2);
             }
         }                                                                                                                                                                          
@@ -445,8 +429,10 @@ public class CameraSnapAllSSIM : Agent
 
     private Camera cam;
     private float previousQuality = 0f;
+    // private int currentLod = 0;
     private int currentLod = -1;
     private bool running = true;
+    private Agent agent;
 
     /** Beginning of Agent */
 
@@ -456,30 +442,22 @@ public class CameraSnapAllSSIM : Agent
     {
         Start();
 
+        agent = gameObject.GetComponent<Agent>();
+
         m_resetParams = Academy.Instance.EnvironmentParameters;
         SetResetParameters();
     }
 
-    // void Update()
-    // {
-    //     double timeInterval = Time.realtimeSinceStartup - lastTime;
-    //     Debug.Log("timeInterval: " + timeInterval + "s");
-    //     if (timeInterval > waitingInterval)
-    //     {
-    //         RequestAction();
-    //         seqNum++;
-
-    //         if (seqNum == posSequence.Length)
-    //             NextSequence();
-
-    //         if (!running)
-    //             return;
-
-    //     lastTime = Time.realtimeSinceStartup;
-    //     lastFrameCount = Time.frameCount;
-    //     MoveCam(seqNum);
-    //     }
-    // }
+    void Update()
+    {
+        double timeInterval = Time.realtimeSinceStartup - lastTime;
+        // Debug.Log("timeInterval: " + timeInterval + "s");
+        if (timeInterval > waitingInterval)
+        {
+            RequestDecision();
+            
+        }
+    }
 
     public override void CollectObservations(VectorSensor sensor)
     {
@@ -508,11 +486,15 @@ public class CameraSnapAllSSIM : Agent
         //     return;
         // }
 
+        Debug.Log("Active LoD: " + currentLod);
         Debug.Log("Selected LoD: " + selectedLod);
 
         Debug.Log("Current sequence number:" + seqNum);
         
-        lodContainer.transform.GetChild(currentLod).gameObject.SetActive(false);
+        foreach (Transform child in lodContainer.transform)
+            child.gameObject.SetActive(false);
+
+        // lodContainer.transform.GetChild(currentLod).gameObject.SetActive(false);
         
         lodContainer.transform.GetChild(selectedLod).gameObject.SetActive(true);
 
@@ -527,6 +509,22 @@ public class CameraSnapAllSSIM : Agent
         float reward = (1 - Mathf.Abs((float) (1 - 0.5 * camSpeed - 0.5 * camDistance) - previousQuality));
 
         SetReward(reward);
+
+        seqNum++;
+        Debug.Log("Sequence Number updated to: " + seqNum);
+
+        if (seqNum == posSequence.Length)
+            NextSequence();
+
+        if (!running)
+            return;
+
+        Debug.Log("Sequence Number check: " + seqNum);
+
+        lastTime = Time.realtimeSinceStartup;
+        lastFrameCount = Time.frameCount;
+        MoveCam(seqNum);
+
         // EndEpisode();
 
         // Update the sequence number
@@ -555,23 +553,28 @@ public class CameraSnapAllSSIM : Agent
         if (Input.GetKey("0"))
         {
             discreteActionsOut[0] = 0;
+            Debug.Log("Pressed 0");
         } else if (Input.GetKey("1"))
         {
             discreteActionsOut[0] = 1;
+            Debug.Log("Pressed 1");
         } else if (Input.GetKey("2"))
         {
             discreteActionsOut[0] = 2;
+            Debug.Log("Pressed 2");
         } else if (Input.GetKey("3"))
         {
             discreteActionsOut[0] = 3;
+            Debug.Log("Pressed 3");
         }
     }
 
     public void SetResetParameters()
     {
+        Debug.Log("Resetting parameters.");
         //Set the attributes of the ball by fetching the information from the academy
         seqNum = 0;
-        currentLod = 0;
+        currentLod = -1;
         initCamPos = posSequence[seqNum];  // Starting Position
         cam.transform.position = initCamPos;
         cam.transform.LookAt(lodContainer.transform.position - initCamPos);
@@ -619,13 +622,13 @@ public class CameraSnapAllSSIM : Agent
 
         string filename = TakeScreenshot();
 
-        print("Filename: " + filename);
+        // print("Filename: " + filename);
 
         string groundTruth = GetImagePathFromLoD(0, seqNum);
         // print("Image path for current seqNumber (" + seqNum + ") is: " + GetImagePathFromLoD(currentLod, seqNum));
         print("Image path for current seqNumber (" + seqNum + ") and LoD (0) is: " + GetImagePathFromLoD(0, seqNum));
 
-        print("Computing SSIM for the current LoD");
+        // print("Computing SSIM for the current LoD");
 
         previousQuality = (float) compute_ssim(filename, groundTruth);
 
@@ -660,16 +663,16 @@ public class CameraSnapAllSSIM : Agent
 
     private void NextSequence()
     {
-        if (currentLod == lodContainer.transform.childCount - 1)
-        {
-            #if UNITY_EDITOR
-                UnityEditor.EditorApplication.isPlaying = false;
-            #else
-                Application.Quit();
-            #endif
-            running = false;
-            return;
-        }
+        // if (currentLod == lodContainer.transform.childCount - 1)
+        // {
+        //     #if UNITY_EDITOR
+        //         UnityEditor.EditorApplication.isPlaying = false;
+        //     #else
+        //         Application.Quit();
+        //     #endif
+        //     running = false;
+        //     return;
+        // }
         if (currentLod == -1)
             currentLod = 0;
         else
@@ -695,7 +698,7 @@ public class CameraSnapAllSSIM : Agent
         folderScreenshots = string.Format("{0}/screenshots/{1}", GetDataPath(), lodName);
         System.IO.Directory.CreateDirectory(folderScreenshots);
 
-        seqNum = 0;
+        // seqNum = 0;
     }
 
     public double compute_ssim(string testImagePath, string groundTruthImagePath)

@@ -1,10 +1,10 @@
 # Reinfocment Learning for Multimedia Adaptive Streaming with Unity​
 *Daniele Lorenzi, Josef Lubas, Patrick Stöckermann*
 
-create conda env from requirements.txt
-start with following command from anaconda promt: 
+- create conda env from requirements.txt
+- start with following command from anaconda promt: 
 mlagents-learn C:\Users\stoeckermann\Documents\GitHub\unity_agent\Assets\ML-Agents\Armadillo.yaml  --run-id=1
-click play in unity scene
+- click play in unity scene
 
 The codebase, especially the Unity part is based on:
 # Deep 3D Optimization

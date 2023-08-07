@@ -1,4 +1,4 @@
-# Reinfocment Learning for Multimedia Adaptive Streaming with Unity​
+# Reinforcement Learning for Multimedia Adaptive Streaming with Unity​
 *Daniele Lorenzi, Josef Lubas, Patrick Stöckermann*
 
 - create conda env from requirements.txt
